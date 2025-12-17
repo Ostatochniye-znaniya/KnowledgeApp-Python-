@@ -1,0 +1,7 @@
+fetch('/api/groups/123/participation', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({ status: 'yes' }),
+});
