@@ -40,8 +40,6 @@ def report():
                     
             report_obj["passed_count"] = passed_count
             report_obj["failed_count"] = failed_count
-            report_obj["passed_count"] = report_obj.pop("passed_count")
-            report_obj["failed_count"] = report_obj.pop("failed_count")
 
             report_obj["status"] = "valid"
             REPORTS[report_obj["id"]] = report_obj
