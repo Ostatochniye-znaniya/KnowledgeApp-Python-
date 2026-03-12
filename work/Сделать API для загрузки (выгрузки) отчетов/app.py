@@ -37,7 +37,7 @@ def report():
                     failed_count += 1
             report_obj["passed_count"] = passed_count
             report_obj["failed_count"] = failed_count
-
+            report_obj["status"] = "valid"
             REPORTS[report_obj["id"]] = report_obj
             return REPORTS
         else:
@@ -46,12 +46,16 @@ def report():
                 print(k,v)
                 if v == False:
                     err_lst.append(f'{k} нет в списке')
+            report_obj["status"] = "invalid"
+            report_obj["errors"] = err_lst
+            REPORTS[report_obj["id"]] = report_obj
             return err_lst
                                                                        
-@app.route('/report_error', methods = ["GET"])
-def report_error():
-    ...
 
 @app.route('/done', methods = ["GET"])
-def signed():
+def to_sign():
     ...                                                                                 #повесить флаг что готово к печати
+
+@app.route('/report/<int:id>', methods = ["GET"])
+def get_report(id):
+    return REPORTS[id]
