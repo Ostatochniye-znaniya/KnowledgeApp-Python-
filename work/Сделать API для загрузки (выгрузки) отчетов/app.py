@@ -4,8 +4,7 @@ from flask import Flask, request, redirect, url_for
 app = Flask(__name__)
 
 REPORTS = {}
-SPECIALTIES = ("CS","SWE")                                               #тестовые значения
-PROGRAMS = ("AI","WEB")
+SPECIALTY_PROGRAMS = {"CS":("AI",), "SWE":("WEB",)}                                               #тестовые значения
 PROFESSORS = ["Ivanov","Black"]
 GROUPS = ("A101","A102")
 
@@ -25,8 +24,8 @@ def report():
         report_obj = request.json
 
         checks = {
-            "speciality": report_obj["speciality"] in SPECIALTIES,
-            "program": report_obj["program"] in PROGRAMS,
+            "speciality": report_obj["speciality"] in SPECIALTY_PROGRAMS,
+            "program": report_obj["program"] in SPECIALTY_PROGRAMS[report_obj["speciality"]],
             "professor":report_obj["professor"] in PROFESSORS,
             "group":report_obj["group"] in GROUPS
         }
@@ -48,7 +47,7 @@ def report():
             for k, v in checks.items():
                 print(k,v)
                 if v == False:
-                    err_lst.append(f'{k} нет в списке')
+                    err_lst.append(f'ошибка {k}')
             report_obj["status"] = "invalid"
             report_obj["errors"] = err_lst
             REPORTS[report_obj["id"]] = report_obj
