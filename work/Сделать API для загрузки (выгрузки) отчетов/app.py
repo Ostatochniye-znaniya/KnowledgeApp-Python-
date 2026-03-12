@@ -20,24 +20,34 @@ def report():
         return REPORTS
     if request.method == "POST":
         report_obj = request.json
-        check = report_obj["speciality"] in SPECIALTIES and report_obj["program"] in PROGRAMS \
-        and report_obj["professor"] in PROFESSORS and report_obj["group"] in GROUPS
 
-        if check:
+        checks = {
+            "speciality": report_obj["speciality"] in SPECIALTIES,
+            "program": report_obj["program"] in PROGRAMS,
+            "professor":report_obj["professor"] in PROFESSORS,
+            "group":report_obj["group"] in GROUPS
+        }
+
+        if False not in checks.values():
             passed_count, failed_count = 0,0
             for i in report_obj["students"]:
                 if i["passed"] == True:
                     passed_count += 1
                 else:
                     failed_count += 1
-                report_obj["passed_count"] = passed_count
-                report_obj["failed_count"] = failed_count
+            report_obj["passed_count"] = passed_count
+            report_obj["failed_count"] = failed_count
 
             REPORTS[report_obj["id"]] = report_obj
             return REPORTS
         else:
-            return REPORTS
-                                                                      
+            err_lst = []
+            for k, v in checks.items():
+                print(k,v)
+                if v == False:
+                    err_lst.append(f'{k} нет в списке')
+            return err_lst
+                                                                       
 @app.route('/report_error', methods = ["GET"])
 def report_error():
     ...
