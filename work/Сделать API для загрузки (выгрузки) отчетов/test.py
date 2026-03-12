@@ -5,7 +5,21 @@ data = {
 "speciality": "CS",
 "program": "AI",
 "professor": "Ivanov",
-"group": "A101"
+"group": "A101",
+"students": [
+    {
+        "name" : "Ivan Petrov",
+        "grade": 5,
+        "test_grade": 2,
+        "passed": False
+    },
+    {
+        "name" : "Oleg Gazanov",
+        "grade": 3,
+        "test_grade": 3,
+        "passed": True
+    }
+]                                        
 }
 
 requests.post(
