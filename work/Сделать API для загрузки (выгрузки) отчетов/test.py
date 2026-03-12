@@ -19,7 +19,9 @@ data = {
         "test_grade": 3,
         "passed": True
     }
-]                                        
+],
+"unallowed": 3,
+"skipped": 2                                         
 }
 
 requests.post(
