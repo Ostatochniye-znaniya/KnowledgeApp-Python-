@@ -19,6 +19,9 @@ def report():
     if request.method == "GET":                                                            #todo: подправить вывод с счетчиком фейлд и пессд
         return REPORTS
     if request.method == "POST":
+        if request.json is None:
+            return "JSON пуст."
+        
         report_obj = request.json
 
         checks = {
@@ -54,8 +57,16 @@ def report():
 
 @app.route('/done', methods = ["GET"])
 def to_sign():
-    ...                                                                                 #повесить флаг что готово к печати
-
+    res = []
+    for i in REPORTS:
+        if REPORTS[i]["status"] in ("valid", "to be signed"):
+            REPORTS[i]["status"] = "to be signed"
+            res.append(REPORTS[i])
+    return {"готовые к подписи отчеты": res}
+                                                                     
 @app.route('/report/<int:id>', methods = ["GET"])
 def get_report(id):
-    return REPORTS[id]
+    try:
+        return REPORTS[id]
+    except KeyError:
+        return "отчета с введенным id не существует"
