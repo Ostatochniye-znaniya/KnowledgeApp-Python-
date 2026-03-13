@@ -28,3 +28,10 @@ requests.post(
 "http://127.0.0.1:5000/report",
 json=data
 )
+
+requests.patch(
+"http://127.0.0.1:5000/report/01",
+json={
+    "professor" : "Black"
+}
+)
