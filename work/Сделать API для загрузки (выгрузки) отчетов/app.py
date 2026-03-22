@@ -1,67 +1,57 @@
-from flask import Flask, request, redirect, url_for
+# app.py
+from flask import Flask, request, jsonify
+from models import db, Report  # db = SQLAlchemy()
 
 
 app = Flask(__name__)
 
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:2008@localhost:5432/reports_db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db.init_app(app)
+
+with app.app_context():
+    db.create_all()
+
 REPORTS = {}
-CHANGEABLE_FIELDS = ("professor", "group", "students", )
-SPECIALTY_PROGRAMS = {"CS":("AI",), "SWE":("WEB",)}                                               #тестовые значения
-PROFESSORS = ["Ivanov","Black"]
-GROUPS = ("A101","A102")
-
-def validation(object):
-    checks = {
-            "speciality": object["speciality"] in SPECIALTY_PROGRAMS,
-            "program": object["program"] in SPECIALTY_PROGRAMS[object["speciality"]],
-            "professor": object["professor"] in PROFESSORS,
-            "group": object["group"] in GROUPS
-        }
-
-    if False not in checks.values():
-        passed_count, failed_count = 0,0
-        for i in object["students"]:
-            if i["passed"] == True:
-                passed_count += 1
-            else:
-                failed_count += 1
-                    
-        object["passed_count"] = passed_count
-        object["failed_count"] = failed_count
-
-        object["status"] = "valid"
-        return "valid"
-    
-    else:
-        err_lst = []
-        for k, v in checks.items():
-            print(k,v)
-            if v == False:
-                err_lst.append(f'ошибка {k}')
-        object["status"] = "invalid"
-        object["errors"] = err_lst
-        return err_lst
+CHANGEABLE_FIELDS = ("discipline_id", "teacher_id", "file_path", "is_correct", "result_of_attestation")
 
 @app.route('/')
 def index():
     return "api для отчетов"
 
-@app.route('/report', methods = ["GET", "POST"])
+@app.route('/report', methods=["GET", "POST"])
 def report():
-    if request.method == "GET":                                                             
-        return REPORTS
+    if request.method == "GET":
+        reports = Report.query.all()
+        return jsonify([
+            {
+                "report_id": r.report_id,
+                "discipline_id": r.discipline_id,
+                "teacher_id": r.teacher_id,
+                "file_path": r.file_path,
+                "is_correct": r.is_correct,
+                "result_of_attestation": r.result_of_attestation
+            }
+            for r in reports
+        ])
+    
     if request.method == "POST":
-        if request.json is None:
-            return "JSON пуст."
-        
-        report_obj = request.get_json()
+        data = request.get_json()
+        new_report = Report(
+            # report_id = data.get("report_id"),
+            discipline_id=data.get("discipline_id"),
+            teacher_id=data.get("teacher_id"),
+            file_path=data.get("file_path"),
+            is_correct=data.get("is_correct", False),
+            result_of_attestation=data.get("result_of_attestation")
+        )
 
-        if validation(report_obj) == "valid":
-            REPORTS[report_obj["id"]] = report_obj
-            return "done"
-        else:
-            REPORTS[report_obj["id"]] = report_obj
-            return validation(report_obj)                
-
+        db.session.add(new_report)
+        db.session.commit()
+        return jsonify({"message": "Report created", "id": new_report.report_id}), 201
+    
 @app.route('/done', methods = ["GET"])
 def to_sign():
     res = []

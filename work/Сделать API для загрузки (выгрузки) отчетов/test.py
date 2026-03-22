@@ -1,27 +1,12 @@
 import requests
 
 data = {
-"id": 1,
-"speciality": "CS",
-"program": "AI",
-"professor": "Ivanov",
-"group": "A101",
-"students": [
-    {
-        "name" : "Ivan Petrov",
-        "grade": 5,
-        "test_grade": 2,
-        "passed": False
-    },
-    {
-        "name" : "Oleg Gazanov",
-        "grade": 3,
-        "test_grade": 3,
-        "passed": True
-    }
-],
-"unallowed": 3,
-"skipped": 2                                         
+# "report_id": 1,
+"discipline_id": 2,
+"teacher_id": 2,
+"file_path": "C:/User/reports/report5.txt",
+"is_correct":True,
+"result_of_attestation": True,                                       
 }
 
 requests.post(
@@ -29,9 +14,9 @@ requests.post(
 json=data
 )
 
-requests.patch(
-"http://127.0.0.1:5000/report/01",
-json={
-    "professor" : "Black"
-}
-)
+# requests.patch(
+# "http://127.0.0.1:5000/report/01",
+# json={
+#     "professor" : "Black"
+# }
+# )
