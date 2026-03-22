@@ -14,9 +14,9 @@ requests.post(
 json=data
 )
 
-# requests.patch(
-# "http://127.0.0.1:5000/report/01",
-# json={
-#     "professor" : "Black"
-# }
-# )
+requests.patch(
+"http://127.0.0.1:5000/report/03",
+json={
+    "discipline_id" : 322
+}
+)

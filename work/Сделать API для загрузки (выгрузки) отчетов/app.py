@@ -1,6 +1,6 @@
 # app.py
 from flask import Flask, request, jsonify
-from models import db, Report  # db = SQLAlchemy()
+from models import db, Report
 
 
 app = Flask(__name__)
@@ -52,37 +52,45 @@ def report():
         db.session.commit()
         return jsonify({"message": "Report created", "id": new_report.report_id}), 201
     
-@app.route('/done', methods = ["GET"])
-def to_sign():
-    res = []
-    for i in REPORTS:
-        if REPORTS[i]["status"] in ("valid", "to be signed"):
-            REPORTS[i]["status"] = "to be signed"
-            res.append(REPORTS[i])
-    return {"готовые к подписи отчеты": res}
+# @app.route('/done', methods = ["GET"])                                                                УТОЧНИТЬ ПО ПОЛЮ СТАТУС
+# def to_sign():
+#     res = []
+#     for i in REPORTS:
+#         if REPORTS[i]["status"] in ("valid", "to be signed"):
+#             REPORTS[i]["status"] = "to be signed"
+#             res.append(REPORTS[i])
+#     return {"готовые к подписи отчеты": res}
                                                                      
-@app.route('/report/<int:id>', methods = ["GET", "PATCH"])
+@app.route('/report/<int:id>', methods = ["GET", "PATCH"])            
 def get_report(id):
+    report = Report.query.get(id)
     if request.method == "GET":
         try:
-            return REPORTS[id]
+            return report.to_dict()
+
         except KeyError:
             return "отчета с введенным id не найдено"
         
     if request.method == "PATCH":
-        if request.json is None:
-            return "empty json"
-        try:
-            log = []
-            if REPORTS[id]: 
-                new_info = request.json
-                for i in new_info.keys():
-                    if i in CHANGEABLE_FIELDS:
-                        REPORTS[id][i] = new_info[i]
-                    else:
-                        log.append(f'{i} error')
-                print(log)
-            return validation(REPORTS[id])
-                
-        except KeyError:
-            return "отчета с введенным id не найдено"
+        data = request.get_json()
+        if data is None:
+            return {"error": "empty json"}, 400
+        
+        log = []
+        for field, value in data.items():
+            if field in CHANGEABLE_FIELDS:
+                if hasattr(report, field):
+                    setattr(report, field, value)
+                else:
+                    log.append(f'{field} - атрибут не существует')
+            else:
+                log.append(f'{field} - поле не в списке изменяемых')
+        
+        db.session.add(report)
+        db.session.commit()
+        
+        return {
+            "message": "отчет обновлен",
+            "warnings": log if log else None,
+            "report": report.to_dict()
+        }
