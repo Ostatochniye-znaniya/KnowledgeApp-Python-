@@ -6,7 +6,7 @@ from models import db, Report
 app = Flask(__name__)
 
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:2008@localhost:5432/reports_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:2008@localhost:5432/reports_db'       #пароль со своей локалки!
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
