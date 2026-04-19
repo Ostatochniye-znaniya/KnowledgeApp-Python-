@@ -1,32 +1,45 @@
-# #todo : добавить fk на оба поля 
-# from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import Column, Integer, ForeignKey, Boolean, String
+from sqlalchemy.orm import declarative_base, Mapped, MappedColumn, DeclarativeBase, relationship
 
-# db = SQLAlchemy()
+class Base(DeclarativeBase):
+    pass
 
-# class Report(db.Model):
-#     __tablename__ = 'Report'
-#     report_id = db.Column(db.Integer, primary_key=True)   
-#     discipline_id = db.Column(db.Integer, nullable=False)                                      
-#     teacher_id = db.Column(db.Integer, nullable=False) 
-    
-#     file_path = db.Column(db.String(100))
-#     is_correct = db.Column(db.Boolean)
-#     result_of_attestation = db.Column(db.Text, nullable=True)
-    
-#     done_in_paper_form = db.Column(db.Boolean, default=False)
-#     done_in_electronic_form = db.Column(db.Boolean, default=False)
-#     all_done = db.Column(db.Boolean, default=False)
+class Reports(Base):
+    __tablename__ = "reports"
 
-#     def to_dict(self):
-#         return {
-#             'report_id': self.report_id,
-#             'discipline_id': self.discipline_id,
-#             'teacher_id': self.teacher_id,
-#             'file_path': self.file_path,
-#             'is_correct': self.is_correct,
-#             'result_of_attestation': self.result_of_attestation,
-#             'done_in_paper_form': self.done_in_paper_form,
-#             'done_in_electronic_form': self.done_in_electronic_form,
-#             'all_done': self.all_done,
-#         }
-    
+    id: Mapped[int] = MappedColumn(primary_key = True)
+    discipline_id: Mapped[int] = MappedColumn(ForeignKey("disciplines.id"))
+    teacher_id: Mapped[int] = MappedColumn(ForeignKey("users.id"))
+    file_path: Mapped[str] = MappedColumn(String(255))
+    is_correct: Mapped[bool] = MappedColumn(Boolean)
+    done_in_paper_form: Mapped[bool] = MappedColumn(Boolean)
+    done_in_electronic_form: Mapped[bool] = MappedColumn(Boolean)
+    all_done: Mapped[bool] = MappedColumn(Boolean)
+    semester_id: Mapped[int] = MappedColumn(Integer)
+
+    teacher: Mapped["Users"] = relationship(back_populates="reports")
+    discipline: Mapped["Disciplines"] = relationship(back_populates="reports")
+
+class Users(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = MappedColumn(primary_key = True)
+    name: Mapped[str] = MappedColumn(String(255))
+    email: Mapped[str] = MappedColumn(String(255))
+    password: Mapped[str] = MappedColumn(String(255))
+    role_id: Mapped[int] = MappedColumn(Integer)
+    status_id: Mapped[int] = MappedColumn(Integer)
+    faculty_id: Mapped[int] = MappedColumn(Integer)
+
+    reports: Mapped[list["Reports"]] = relationship(back_populates="teacher")
+    disciplines: Mapped[list["Disciplines"]] = relationship(back_populates="teacher")
+
+class Disciplines(Base):
+    __tablename__ = "disciplines"
+
+    id: Mapped[int] = MappedColumn(primary_key = True)
+    name: Mapped[str] = MappedColumn(String(255))
+    responsible_teacher_id: Mapped[int] = MappedColumn(ForeignKey("users.id"))
+
+    teacher: Mapped["Users"] = relationship(back_populates="disciplines")
+    reports: Mapped[list["Reports"]] = relationship(back_populates="discipline")
