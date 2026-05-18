@@ -2,14 +2,13 @@ from config import Config
 from flask import Flask, request, jsonify
 from sqlalchemy import create_engine
 from sqlalchemy.orm import session, sessionmaker
-from models import Base, Users, Reports, Disciplines
+from models import Base, Disciplines, Reports, Departments, StudyProgram, Group
 
 
 app = Flask(__name__)
 
 engine = create_engine(
-    Config.db_url, 
-    echo = True)
+    Config.db_url)
 
 Session = sessionmaker(bind = engine)
 session = Session()
@@ -17,16 +16,37 @@ session = Session()
 Base.metadata.create_all(engine)
 session.commit()
 
-@app.route('/', methods = ['GET'])
+@app.route('/', methods = ['GET', 'POST'])
 def index():
     return "api для отчетов"
 
 
-@app.route('/reports', methods = ['GET', 'POST'])
+@app.route('/reports', methods=['GET'])
 def reports():
     if request.method == "GET":
-        result = session.query(Reports).all()
-        return [Reports.to_dict(x) for x in result]
+        teacher_id = request.args.get('teacher_id')
+        group_number = request.args.get('group_number')
+        discipline_id = request.args.get('discipline_id')
+
+        query = session.query(Reports)
+        query = query.filter(Reports.is_correct == False)
+
+        if teacher_id:
+            query = query.filter(Reports.teacher_id == teacher_id)
+        if discipline_id:
+            query = query.filter(Reports.discipline_id == discipline_id)
+        if group_number:
+            query = (
+                query
+                .join(Disciplines, Reports.discipline_id == Disciplines.discipline_id)
+                .join(Departments, Disciplines.department_id == Departments.department_id)
+                .join(StudyProgram, Departments.department_id == StudyProgram.department_id)
+                .join(Group, StudyProgram.program_id == Group.study_program_id)
+                .filter(Group.group_number == group_number)
+            )
+
+        results = query.all()
+        return [r.to_dict() for r in results]
     
     if request.method == "POST":
         data = request.get_json()
@@ -74,5 +94,17 @@ def get_report(rep_id):
         except Exception as e:
             session.rollback()
             return jsonify({"error": str(e)}), 400
-        
-        
+
+@app.route('/report_schema', methods = ["GET"])
+def get_report_schema():
+    return {
+        "report_id": "int",
+        "discipline_id": "int",
+        "teacher_id": "int",
+        "file_path": "str",
+        "is_correct": "bool",
+        "done_in_paper_form": "bool",
+        "done_in_electronic_form": "bool",
+        "all_done": "bool",
+        "semester_id": "int"
+    }
