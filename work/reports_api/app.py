@@ -1,11 +1,25 @@
 from config import Config
 from flask import Flask, request, jsonify
+import os
+import uuid
+from werkzeug.utils import secure_filename
 from sqlalchemy import create_engine
 from sqlalchemy.orm import session, sessionmaker
 from models import Base, Disciplines, Reports, Departments, StudyProgram, Group
 
 
 app = Flask(__name__)
+
+app.config["MAX_CONTENT_LENGTH"] = Config.MAX_FILE_SIZE
+ALLOWED_EXTENSIONS = {"pdf", "doc", "docx"}
+
+ALLOWED_MIMETYPES = {
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+}
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 engine = create_engine(
     Config.db_url)
@@ -74,6 +88,70 @@ def done():
     result = session.query(Reports).filter(Reports.all_done == True)
     return [Reports.to_dict(x) for x in result]
 
+@app.route('/reports/<int:rep_id>/upload', methods=["POST"])
+def upload_report(rep_id):
+    teacher_id = request.form.get("teacher_id")
+
+    if not teacher_id:
+        return jsonify({"error": "teacher_id is required"}), 400
+
+    try:
+        teacher_id = int(teacher_id)
+    except ValueError:
+        return jsonify({"error": "teacher_id must be int"}), 400
+
+    report = session.get(Reports, rep_id)
+
+    if not report:
+        return jsonify({"error": "Report not found"}), 404
+
+    if report.teacher_id != teacher_id:
+        return jsonify({"error": "This report is not for this teacher"}), 403
+
+    if "file" not in request.files:
+        return jsonify({"error": "File is required"}), 400
+
+    file = request.files["file"]
+
+    if file.filename == "":
+        return jsonify({"error": "File name is empty"}), 400
+
+    if not allowed_file(file.filename):
+        return jsonify({"error": "Wrong file extension"}), 400
+
+    if file.mimetype not in ALLOWED_MIMETYPES:
+        return jsonify({"error": "Wrong file type"}), 400
+
+    file.seek(0, os.SEEK_END)
+    file_size = file.tell()
+    file.seek(0)
+
+    if file_size > Config.MAX_FILE_SIZE:
+        return jsonify({"error": "File is too large"}), 400
+
+    os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
+
+    old_name = secure_filename(file.filename)
+    extension = old_name.rsplit(".", 1)[1].lower()
+
+    new_name = f"report_{rep_id}_{uuid.uuid4().hex}.{extension}"
+    save_path = os.path.join(Config.UPLOAD_FOLDER, new_name)
+
+    file.save(save_path)
+
+    report.file_path = save_path
+    report.done_in_electronic_form = True
+
+    if report.done_in_paper_form and report.done_in_electronic_form:
+        report.all_done = True
+
+    session.commit()
+
+    return jsonify({
+        "status": "uploaded",
+        "report_id": report.report_id,
+        "file_path": report.file_path
+    }), 201
 
 @app.route('/reports/<int:rep_id>', methods = ["GET", "PATCH"])
 def get_report(rep_id):

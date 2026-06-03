@@ -14,3 +14,6 @@ class Config:
         f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}"
         f"@{DB_HOST}:{DB_PORT}/{DB_NAME}"
     )
+
+    UPLOAD_FOLDER = "uploads"
+    MAX_FILE_SIZE = 10 * 1024 * 1024 # 10 мб
